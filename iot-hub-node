@@ -1,0 +1,45 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Azure.Devices.Client;
+using Newtonsoft.Json;
+
+namespace Node
+{
+    class Program
+    {
+        static DeviceClient deviceClient;
+        static string iotHubUri = "openhack-31-2.azure-devices.net"; 
+        static string deviceKey = "/M79xA+jPq76XXiu8Rxr+1zOyYn55Xv3I51i6iYc36g="; //there
+
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Simulated device\n");
+            deviceClient = DeviceClient.Create(iotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey("device-01", deviceKey), TransportType.Mqtt); // device - 01 there
+            deviceClient.ProductInfo = "HappyPath_Simulated-CSharp";
+            SendDeviceToCloudMessagesAsync();
+            Console.ReadLine();
+        }
+
+        private static async void SendDeviceToCloudMessagesAsync()
+        {
+            while (true)
+            {
+                var telemetryDataPoint = new
+                {
+                    ticketId = Guid.NewGuid(),
+                    entryTime = DateTime.Now
+                };
+                var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
+                var message = new Message(Encoding.ASCII.GetBytes(messageString));
+
+                await deviceClient.SendEventAsync(message);
+                Console.WriteLine("{0} > Sending message: {1}", DateTime.Now, messageString);
+
+                await Task.Delay(1000);
+            }
+        }
+    }
+}
